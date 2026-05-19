@@ -1,23 +1,5 @@
 // João Oliveira — layer 1
 
-class LayerJO1 extends Layer {
-  LayerJO1(color c) { 
-    super(c); 
-  }
-
-  void update(float t, float bass, float mid, float treble,
-              float burstA, float burstB, float burstC,
-              boolean isBeat, float beatStrength, float flashVal) {
-    // Audio processing logic for LayerJO1 goes here
-  }
-
-  // FIXED: Implemented the missing abstract method required by Layer
-  void draw() {
-    // Visual rendering for LayerJO1 goes here
-  }
-}
-
-  
 // ── Data container for one prism instance ────
 class Prism {
   float x, y;          // screen centre
@@ -73,7 +55,7 @@ class Prism {
 
 
 // ── The layer itself ──────────────────────────
-class PrismLayer extends Layer {
+class LayerJO1 extends Layer {
 
   ArrayList<Prism> prisms = new ArrayList<Prism>();
 
@@ -81,8 +63,9 @@ class PrismLayer extends Layer {
   float _bass, _mid, _treble;
   boolean _isBeat;
   float _beatStrength;
+  float _spawnTimer = 0;
 
-  PrismLayer(color c) { super(c); }
+  LayerJO1(color c) { super(c); }
 
   // ── Layer interface ──────────────────────────
   void update(float t,
@@ -99,6 +82,25 @@ class PrismLayer extends Layer {
     // Advance every prism; remove dead ones
     for (int i = prisms.size() - 1; i >= 0; i--) {
       if (!prisms.get(i).tick()) prisms.remove(i);
+    }
+
+    // ── Audio-reactive spawning ────────────────
+
+    // On beat: burst of prisms
+    if (isBeat && prisms.size() < 60) {
+      int count = (int)(1 + beatStrength * 3);
+      for (int i = 0; i < count; i++) {
+        spawnRandom();
+      }
+    }
+
+    // Continuous gentle trickle driven by mid+treble
+    if (prisms.size() < 40) {
+      _spawnTimer += mid * 1.5 + treble * 0.8;
+      if (_spawnTimer > 1.0) {
+        _spawnTimer -= 1.0;
+        spawnRandom();
+      }
     }
   }
 
