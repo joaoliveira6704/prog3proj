@@ -1,11 +1,10 @@
 // SHINE ON YOU CRAZY DIAMOND — 9 Layer Visualizer
-// Processing 4 | Grupo: Estudante S, A, X
-// Teclas: Q W E R T Y U I O = toggle layers | A S D = burst | SPACE = flash
+// Processing 4 | Grupo: João Oliveira, Miguel Neto, João Santos
+// Teclas: 1-3 = JO1-3 | 4-6 = MN1-3 | 7-9 = JS1-3 | SPACE = flash
 
 import processing.sound.*;
 
-// CHANGED: Swapped AudioIn for SoundFile
-SoundFile music; 
+SoundFile music;
 FFT fft;
 int bands = 512;
 float[] spectrum = new float[bands];
@@ -20,9 +19,13 @@ boolean isBeat = false;
 float beatStrength = 0;
 
 Layer[] layers = new Layer[9];
+int currentLayer = 0; // 0..8 (JO1..JS3)
+
+void settings() {
+  size(displayWidth / 2, displayHeight / 2);
+}
 
 void setup() {
-  fullScreen();
   frameRate(60);
   colorMode(RGB, 255);
   background(0);
@@ -36,18 +39,18 @@ void setup() {
   fft = new FFT(this, bands);
   fft.input(music);
 
-  // Estudante S
-  layers[0] = new LayerS1(color(167, 123, 202));
-  layers[1] = new LayerS2(color(123, 170, 232));
-  layers[2] = new LayerS3(color(232, 123, 123));
-  // Estudante A
-  layers[3] = new LayerA1(color(123, 232, 180));
-  layers[4] = new LayerA2(color(232, 201, 122));
-  layers[5] = new LayerA3(color(232, 123, 187));
-  // Estudante X
-  layers[6] = new LayerX1(color(123, 232, 232));
-  layers[7] = new LayerX2(color(188, 232, 123));
-  layers[8] = new LayerX3(color(232, 160, 123));
+  // João Oliveira
+  layers[0] = new LayerJO1(color(167, 123, 202));
+  layers[1] = new LayerJO2(color(123, 170, 232));
+  layers[2] = new LayerJO3(color(232, 123, 123));
+  // Miguel Neto
+  layers[3] = new LayerMN1(color(123, 232, 180));
+  layers[4] = new LayerMN2(color(232, 201, 122));
+  layers[5] = new LayerMN3(color(232, 123, 187));
+  // João Santos
+  layers[6] = new LayerJS1(color(123, 232, 232));
+  layers[7] = new LayerJS2(color(188, 232, 123));
+  layers[8] = new LayerJS3(color(232, 160, 123));
 }
 
 void draw() {
@@ -56,12 +59,9 @@ void draw() {
 
   analyzeAudio();
 
-  for (Layer l : layers) {
-    if (l.visible) {
-      l.update(t, bass, mid, treble, burstA, burstB, burstC, isBeat, beatStrength, flashVal);
-      l.draw();
-    }
-  }
+  Layer l = layers[currentLayer];
+  l.update(t, bass, mid, treble, burstA, burstB, burstC, isBeat, beatStrength, flashVal);
+  l.draw();
 
   drawFlash();
 
@@ -119,9 +119,15 @@ void drawFlash() {
 
 void keyPressed() {
   switch (key) {
-    case '1': layers[0].toggle(); break;
-    case '2': layers[1].toggle(); break;
-    case '3': layers[2].toggle(); break;
+    case '1': currentLayer = 0; break; // JO1
+    case '2': currentLayer = 1; break; // JO2
+    case '3': currentLayer = 2; break; // JO3
+    case '4': currentLayer = 3; break; // MN1
+    case '5': currentLayer = 4; break; // MN2
+    case '6': currentLayer = 5; break; // MN3
+    case '7': currentLayer = 6; break; // JS1
+    case '8': currentLayer = 7; break; // JS2
+    case '9': currentLayer = 8; break; // JS3
     case ' ': flashVal = 1.0; break;
   }
 }
