@@ -22,7 +22,7 @@ Layer[] layers = new Layer[9];
 int currentLayer = 0; // 0..8 (JO1..JS3)
 
 void settings() {
-  size(displayWidth / 2, displayHeight / 2);
+  size(1440, 768);
 }
 
 void setup() {
