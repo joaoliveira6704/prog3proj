@@ -26,7 +26,7 @@ class LayerJO2 extends Layer {
   LayerJO2(PApplet p, color c, int device) {
     super(c);
     println("JO2 using mic device: " + device);
-    mic = new AudioIn(p, 0);
+    mic = new AudioIn(p, 1);
     mic.start();
     micFFT = new FFT(p, micBands);
     micFFT.input(mic);

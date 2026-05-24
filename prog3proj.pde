@@ -26,14 +26,14 @@ void settings() {
 }
 
 void setup() {
-  frameRate(60);
+  frameRate(25);
   colorMode(RGB, 255);
   background(0);
 
   // CHANGED: Load and play the MP3 file instead of the mic
   music = new SoundFile(this, "music.mp3");
   music.loop();
-  music.jump(120.0);
+  music.jump(0);
 
   // Init FFT using the music file as input
   fft = new FFT(this, bands);
@@ -61,15 +61,28 @@ void draw() {
 
   analyzeAudio();
 
+  // Define which layer should stay on top (index 3 is LayerMN1)
+  // If you meant the 3rd layer conceptually (LayerJO3), change this to 2.
+  int topLayerIndex = 2; 
+
+  // 1. Draw all layers EXCEPT the top layer
   for (int i = 0; i < 9; i++) {
-    if (layerActive[i]) {
+    if (i != topLayerIndex && layerActive[i] && layers[i] != null) {
       Layer l = layers[i];
       l.update(t, bass, mid, treble, burstA, burstB, burstC, isBeat, beatStrength, flashVal);
       l.draw();
     }
   }
-
+  
+  // 2. Draw the top layer LAST so it stays in the foreground
+  if (layerActive[topLayerIndex] && layers[topLayerIndex] != null) {
+    Layer l = layers[topLayerIndex];
+    l.update(t, bass, mid, treble, burstA, burstB, burstC, isBeat, beatStrength, flashVal);
+    l.draw();
+  }
+  
   drawFlash();
+  drawHUD();
 
   burstA *= 0.92;
   burstB *= 0.92;
@@ -123,6 +136,25 @@ void drawFlash() {
   }
 }
 
+void drawHUD() {
+  textSize(16);
+  textAlign(LEFT, TOP);
+  
+  // Array of names to make the labels readable
+  String[] layerNames = {"JO1", "JO2", "JO3", "MN1", "MN2", "MN3", "JS1", "JS2", "JS3"};
+  
+  for (int i = 0; i < 9; i++) {
+    if (layerActive[i]) {
+      fill(0, 255, 0); // Green if true
+    } else {
+      fill(255, 0, 0); // Red if false
+    }
+    
+    // Draw the text (e.g., "JO1: true") with 25px vertical spacing
+    text(layerNames[i] + ": " + layerActive[i], 20, 20 + (i * 25));
+  }
+}
+
 void keyPressed() {
   switch (key) {
     case '1': layerActive[0] = !layerActive[0]; break; // JO1
@@ -135,10 +167,46 @@ void keyPressed() {
     case '8': layerActive[7] = !layerActive[7]; break; // JS2
     case '9': layerActive[8] = !layerActive[8]; break; // JS3
     case ' ': flashVal = 1.0; break;
-    case 'a':
-      for (int i = 0; i < 9; i++) {
-        if (layerActive[i]) layers[i].keyPressed(key);
-      }
-      break;
-  }
+      // JO LAYERS ACTIONS
+      case 'q': 
+      case 'Q':
+        if (layerActive[0]) layers[0].keyPressed(key);
+        break;
+      case 'w': 
+      case 'W':
+        if (layerActive[1]) layers[1].keyPressed(key);
+        break;
+      case 'e': 
+      case 'E':
+        if (layerActive[2]) layers[2].keyPressed(key);
+        break;
+
+      // MN LAYERS ACTIONS
+      case 'a': 
+      case 'A':
+        if (layerActive[3]) layers[3].keyPressed(key);
+        break;
+      case 's': 
+      case 'S':
+        if (layerActive[4]) layers[4].keyPressed(key);
+        break;
+      case 'd': 
+      case 'D':
+        if (layerActive[5]) layers[5].keyPressed(key);
+        break;
+
+      // JS LAYERS ACTIONS
+      case 'z': 
+      case 'Z':
+        if (layerActive[6]) layers[6].keyPressed(key);
+        break;
+      case 'x': 
+      case 'X':
+        if (layerActive[7]) layers[7].keyPressed(key);
+        break;
+      case 'c': 
+      case 'C':
+        if (layerActive[8]) layers[8].keyPressed(key);
+        break;
+    }
 }

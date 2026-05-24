@@ -74,7 +74,7 @@ class LayerJO1 extends Layer {
   }
 
   void keyPressed(char k) {
-    if (k == 'a') spawnRandom();
+    if (k == 'q' || k == 'Q') spawnRandom();
   }
 
   void draw() {
