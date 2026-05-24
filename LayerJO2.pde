@@ -1,5 +1,4 @@
 import processing.sound.*;
-
 class LayerJO2 extends Layer {
 
   ArrayList<Node> nodes;
@@ -26,7 +25,12 @@ class LayerJO2 extends Layer {
   LayerJO2(PApplet p, color c, int device) {
     super(c);
     println("JO2 using mic device: " + device);
-    mic = new AudioIn(p, 1);
+    println("Available audio input devices:");
+    String[] devices = Sound.list();
+    for (int i = 0; i < devices.length; i++) {
+      println(i + ": " + devices[i]);
+    }
+    mic = new AudioIn(p, 0);
     mic.start();
     micFFT = new FFT(p, micBands);
     micFFT.input(mic);
@@ -83,7 +87,14 @@ class LayerJO2 extends Layer {
     // ── Growth driven by mic ───────────────────
     growthAge += 0.2 + micBass * 4 + micMid * 2;
 
-    for (Node n : nodes) n.grow(t, midS);
+    // UPDATE: Backwards loop to allow safe removal of dead nodes
+    for (int i = nodes.size() - 1; i >= 0; i--) {
+      Node n = nodes.get(i);
+      n.grow(t, midS);
+      if (n.isDead()) {
+        nodes.remove(i);
+      }
+    }
 
     int desired = min((int)(growthAge * 0.13) + 5, MAX_NODES);
     while (nodes.size() < desired) { if (!spawnNode()) break; }
@@ -133,10 +144,33 @@ class LayerJO2 extends Layer {
   void draw() {
     if (nodes.isEmpty() || visibility < 0.01) return;
     pushStyle();
-    colorMode(RGB, 255);
-
+    
+    // 1. Draw the organic curved branches
     for (Node n : nodes) n.draw(currentT, bassS, trebS, visibility, micAmp);
 
+    // 2. The "Casey Reas" Proximity Web
+    colorMode(RGB, 255);
+    strokeWeight(0.5); // Hairline stroke
+    
+    float connectionDistance = 40 + (micAmp * 40); // Distance expands with the audio
+    
+    for (int i = 0; i < nodes.size(); i++) {
+      Node n1 = nodes.get(i);
+      if (n1.growT < 0.5) continue; // Only connect established nodes
+      
+      for (int j = i + 1; j < nodes.size(); j++) {
+        Node n2 = nodes.get(j);
+        if (n2.growT < 0.5) continue;
+        
+        float d = dist(n1.endX, n1.endY, n2.endX, n2.endY);
+        if (d < connectionDistance) {
+          // Fade the line out as the distance increases
+          float alphaMap = map(d, 0, connectionDistance, 80, 0); 
+          stroke(200, 200, 255, alphaMap * visibility); 
+          line(n1.endX, n1.endY, n2.endX, n2.endY);
+        }
+      }
+    }
     popStyle();
   }
 
@@ -145,19 +179,27 @@ class LayerJO2 extends Layer {
     float x, y, endX, endY;
     float angle, targetLen;
     int children;
-    float growT, pulse;
+    float growT, tailT, pulse; // NEW: Added tailT to track the decaying tail
     int seed;
 
     Node(float x, float y, float angle, float len) {
       this.x = x; this.y = y;
       this.angle = angle; this.targetLen = len;
       endX = x; endY = y;
-      growT = 0; pulse = 0;
+      growT = 0; 
+      tailT = 0; // Initialize tail tracker
+      pulse = 0;
       seed = (int)random(10000);
     }
 
     void grow(float t, float mid) {
       growT = min(growT + 0.018 + mid * 0.015, 1);
+      
+      // NEW: Once the head grows out a bit, the tail starts following it
+      if (growT > 0.4) {
+        tailT = min(tailT + 0.012 + mid * 0.01, 1);
+      }
+
       float curLen = growT * targetLen;
       endX = x + cos(angle) * curLen;
       endY = y + sin(angle) * curLen;
@@ -168,44 +210,65 @@ class LayerJO2 extends Layer {
 
       pulse *= 0.88;
     }
+    
+    // NEW: Method to check if the segment has fully decayed
+    boolean isDead() {
+      return tailT >= 1;
+    }
 
     void draw(float t, float bass, float treb, float vis, float amp) {
       float g = growT;
       if (g < 0.01) return;
 
-      float a = constrain(vis * (60 + 195 * g), 0, 255);
+      // Soften the overall alpha for that sketch-like buildup, fade out as tail dies
+      float a = constrain(vis * (40 + 100 * g) * (1.0 - tailT), 0, 255); 
       if (a < 2) return;
 
       float pu = pulse;
-      float sw = constrain(0.6 + pu * 3 + amp * 2, 0.3, 6);
+      // Very thin, delicate stroke weights
+      float sw = constrain(0.5 + amp * 1.5, 0.2, 1.5); 
 
-      float hue = (angle * 180 / PI + seed * 0.5 + t * 15 + treb * 80 + amp * 60) % 360;
-      float sat = 180 + bass * 75 + amp * 50;
-      float bri = 160 + treb * 95 + pu * 70 + amp * 40;
+      // Tone down saturation, boost brightness for an elegant look
+      float hue = (angle * 180 / PI + seed * 0.5 + t * 5 + treb * 20) % 360;
+      float sat = 60 + bass * 40;  
+      float bri = 200 + treb * 55; 
 
       colorMode(HSB, 360, 255, 255, 255);
 
-      stroke(hue, sat, bri, (int)a);
+      stroke(hue, sat, bri, a * 0.5);
       strokeWeight(sw);
-      line(x, y, endX, endY);
+      noFill();
 
-      float ns = 2 + pu * 5 + amp * 3;
-      float na = a * (0.5 + 0.5 * pu);
-      noStroke();
-      fill(hue, sat * 0.6, min(bri * 1.4, 255), (int)na);
-      ellipse(endX, endY, ns, ns);
+      // NEW: Calculate the dynamic starting point so the tail slithers forward
+      float currentStartX = lerp(x, endX, tailT);
+      float currentStartY = lerp(y, endY, tailT);
 
-      if (pu > 0.05 || amp > 0.4) {
-        float glowAmp = max(pu, amp * 0.5);
-        fill(hue, sat * 0.25, bri, (int)(na * glowAmp * 0.35));
-        ellipse(endX, endY, ns * 3 + glowAmp * 8, ns * 3 + glowAmp * 8);
-      }
+      // Casey Reas Curves: Calculate control points to bend the line gracefully
+      float d = dist(currentStartX, currentStartY, endX, endY);
+      
+      // Use Perlin noise tied to the node's seed and time to make the curves writhe slightly
+      float n1 = (noise(seed, t * 0.2) - 0.5) * 1.5;
+      float n2 = (noise(seed + 100, t * 0.2) - 0.5) * 1.5;
+      
+      float cp1X = currentStartX + cos(angle + n1) * (d * 0.5);
+      float cp1Y = currentStartY + sin(angle + n1) * (d * 0.5);
+      
+      float cp2X = endX + cos(angle + PI + n2) * (d * 0.5);
+      float cp2Y = endY + sin(angle + PI + n2) * (d * 0.5);
 
-      if (g > 0.4 && random(1) < 0.25) {
-        float da = a * g * 0.12;
-        stroke(hue, sat * 0.4, bri * 0.5, (int)da);
+      // Draw the organic moving branch
+      bezier(currentStartX, currentStartY, cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+
+      // Only draw the glowing joint if the tail hasn't fully detached yet
+      if (tailT < 0.8) {
+        float ns = 4 + pu * 15 + amp * 8;
+        stroke(hue, sat, bri, a * 0.3);
         strokeWeight(0.3);
-        line(x, y, (x + endX) * 0.5, (y + endY) * 0.5);
+        ellipse(endX, endY, ns, ns);
+        
+        if (pu > 0.1 || amp > 0.3) {
+          ellipse(endX, endY, ns * 1.5, ns * 1.5);
+        }
       }
 
       colorMode(RGB, 255);
