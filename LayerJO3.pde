@@ -16,10 +16,12 @@ class LayerJO3 extends Layer {
   
   int currentLine = 0;
   float time = 0;
+  float currentBass = 0;
   
-  float textX;
-  float textY;
-  boolean positionInitialized = false;
+  // Dynamic positioning variables
+  float currentTextX;
+  float currentTextY;
+  float currentTextSize;
 
   ArrayList<BlockParticle> particles = new ArrayList<BlockParticle>();
 
@@ -28,20 +30,18 @@ class LayerJO3 extends Layer {
     this.layerCol = c;
   }
   
-  void pickRandomPosition() {
-    textX = random(width * 0.2, width * 0.8);
-    textY = random(height * 0.2, height * 0.5); // Keep it slightly higher so we can watch them fall
-  }
-  
   void update(float t, float bass, float mid, float treble,
               float burstA, float burstB, float burstC,
               boolean isBeat, float beatStrength, float flashVal) {
     this.time = t;
     
+    // Smooth the bass slightly
+    this.currentBass = lerp(this.currentBass, bass, 0.1);
+    
     // Update all falling blocks
     for (int i = particles.size() - 1; i >= 0; i--) {
       BlockParticle p = particles.get(i);
-      p.update(height, bass); // Pass the screen height for floor collision
+      p.update(height, bass); 
       if (p.isDead()) {
         particles.remove(i);
       }
@@ -49,18 +49,30 @@ class LayerJO3 extends Layer {
   }
   
   void draw() {
-    if (!positionInitialized) {
-      pickRandomPosition();
-      positionInitialized = true;
-    }
-
-    textSize(48);
-    textAlign(CENTER, CENTER);
-    fill(layerCol);
+    // 1. Relaxed Psych Roaming (Lissajous Curves)
+    // Uses time to drift smoothly around the screen in sweeping figure-8s
+    float roamX = sin(time * 0.3) * cos(time * 0.15) * (width * 0.35);
+    float roamY = cos(time * 0.2) * sin(time * 0.25) * (height * 0.35);
     
-    // Float the intact text gently before it breaks
-    float floatY = textY + sin(time * 2) * 15;
-    text(lyrics[currentLine], textX, floatY);
+    currentTextX = (width / 2) + roamX;
+    currentTextY = (height / 2) + roamY;
+
+    // 2. Normal Size text with slight breathing
+    // Base size is 48, with a small bump from the bass
+    currentTextSize = 48 + (sin(time * 0.5) * 5) + (currentBass * 15);
+    
+    textSize(currentTextSize);
+    textAlign(CENTER, CENTER);
+    
+    // Force uppercase
+    String displayTxt = lyrics[currentLine].toUpperCase();
+    
+    // 3. Fake Bold / Psych Shadow Effect
+    fill(red(layerCol) * 0.5, green(layerCol) * 0.5, blue(layerCol) * 0.5, 150); 
+    text(displayTxt, currentTextX + 3, currentTextY + 3); // Slightly smaller offset for smaller text
+    
+    fill(layerCol);
+    text(displayTxt, currentTextX, currentTextY);
     
     // Draw the collapsed blocks
     for (BlockParticle p : particles) {
@@ -73,12 +85,13 @@ class LayerJO3 extends Layer {
   }
 
   void explodeText() {
-    String txt = lyrics[currentLine];
-    textSize(48);
+    // Force uppercase here too so the particle math matches the drawn text
+    String txt = lyrics[currentLine].toUpperCase();
+    textSize(currentTextSize);
     float totalWidth = textWidth(txt);
     
-    float startX = textX - (totalWidth / 2);
-    float floatY = textY + sin(time * 2) * 15;
+    // Start exploding exactly where the text is currently roaming
+    float startX = currentTextX - (totalWidth / 2);
 
     for (int i = 0; i < txt.length(); i++) {
       char c = txt.charAt(i);
@@ -87,17 +100,14 @@ class LayerJO3 extends Layer {
         continue;
       }
       
-      // Spawn heavier, larger, geometric blocks per letter to match the OFFF style
-      // We spawn 2-3 constituent "pieces" of each letter
       int numPieces = int(random(2, 4));
       for(int j = 0; j < numPieces; j++) {
-         particles.add(new BlockParticle(startX + textWidth(c)/2, floatY, layerCol));
+         particles.add(new BlockParticle(startX + textWidth(c)/2, currentTextY, layerCol));
       }
       startX += textWidth(c); 
     }
     
     currentLine = (currentLine + 1) % lyrics.length;
-    pickRandomPosition();
   }
 }
 
@@ -107,68 +117,61 @@ class BlockParticle {
   float vx, vy;
   float rot, rotSpeed;
   float life, maxLife;
-  int shapeType; // 0 = Circle, 1 = Thick Vertical Bar, 2 = Thick Horizontal Bar
+  int shapeType; 
   color pColor;
-  float w, h; // Width and height for the blocks
+  float w, h; 
 
   BlockParticle(float x, float y, color c) {
     this.x = x + random(-10, 10); 
     this.y = y + random(-10, 10);
     
-    // Explosive burst outward
+    // Normal explosion burst
     this.vx = random(-6, 6);
     this.vy = random(-5, 2); 
     
     this.rot = random(TWO_PI);
     this.rotSpeed = random(-0.2, 0.2);
     
-    this.maxLife = 400; // Live longer so they pile up on the floor
+    this.maxLife = 400; 
     this.life = maxLife;
     
     this.shapeType = int(random(3));
     this.pColor = c;
     
-    // Make them large and chunky like the OFFF projection
+    // Reverted to original OFFF block sizes to match the smaller text
     if (this.shapeType == 0) {
       this.w = random(20, 50);
-      this.h = this.w; // Circle
+      this.h = this.w; 
     } else if (this.shapeType == 1) {
       this.w = random(10, 20);
-      this.h = random(40, 80); // Tall bar
+      this.h = random(40, 80); 
     } else {
       this.w = random(40, 80);
-      this.h = random(10, 20); // Wide bar
+      this.h = random(10, 20); 
     }
   }
 
   void update(float screenHeight, float bass) {
-    // 1. Heavy Gravity
-    vy += 0.6; 
+    vy += 0.6; // Normal gravity
     
-    // 2. Air friction
     vx *= 0.98;
     vy *= 0.99;
 
     x += vx;
     y += vy;
     
-    // 3. Floor Collision Logic
     float floorY = screenHeight - (max(w, h) / 2);
     if (y >= floorY) {
       y = floorY;
-      vy *= -0.3; // Bounce slightly
-      vx *= 0.7;  // Friction against the ground
-      
-      // Stop rotating when it hits the ground
+      vy *= -0.3; 
+      vx *= 0.7;  
       rotSpeed *= 0.7; 
       
-      // Bump slightly with the bass when on the ground
       if (bass > 0.5) {
         vy -= bass * 2; 
         vx += random(-bass, bass);
       }
     } else {
-      // Keep spinning while falling
       rot += rotSpeed; 
     }
 
@@ -176,7 +179,6 @@ class BlockParticle {
   }
 
   void draw() {
-    // Fade out very slowly only at the very end of their life
     float alpha = 255;
     if (life < 60) {
       alpha = map(life, 0, 60, 0, 255);
@@ -187,10 +189,8 @@ class BlockParticle {
     rotate(rot);
     noStroke();
     
-    // Solid, opaque colors to mimic the silhouette look
-    fill(red(pColor) * 0.8, green(pColor) * 0.8, blue(pColor) * 0.8, alpha); // Slightly darker for depth
+    fill(red(pColor) * 0.8, green(pColor) * 0.8, blue(pColor) * 0.8, alpha); 
 
-    // Draw chunky geometric shapes
     if (shapeType == 0) {
       ellipse(0, 0, w, h);
     } else {

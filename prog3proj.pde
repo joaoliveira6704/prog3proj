@@ -41,7 +41,7 @@ void setup() {
 
   // João Oliveira
   layers[0] = new LayerJO1(color(167, 123, 202));
-  layers[1] = new LayerJO2(this, color(123, 170, 232));
+  layers[1] = new LayerJO2( color(123, 170, 232));
   layers[2] = new LayerJO3(color(232, 123, 123));
   // Miguel Neto
   layers[3] = new LayerMN1(color(123, 232, 180));
