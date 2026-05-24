@@ -1,6 +1,6 @@
 // SHINE ON YOU CRAZY DIAMOND — 9 Layer Visualizer
 // Processing 4 | Grupo: João Oliveira, Miguel Neto, João Santos
-// Teclas: 1-3 = JO1-3 | 4-6 = MN1-3 | 7-9 = JS1-3 | SPACE = flash
+// Teclas: 1-9 = toggle JO1-3/MN1-3/JS1-3 | SPACE = flash | A = trigger key action (active layers)
 
 import processing.sound.*;
 
@@ -19,7 +19,7 @@ boolean isBeat = false;
 float beatStrength = 0;
 
 Layer[] layers = new Layer[9];
-int currentLayer = 0; // 0..8 (JO1..JS3)
+boolean[] layerActive = new boolean[9];
 
 void settings() {
   size(1440, 768);
@@ -41,7 +41,7 @@ void setup() {
 
   // João Oliveira
   layers[0] = new LayerJO1(color(167, 123, 202));
-  layers[1] = new LayerJO2(color(123, 170, 232));
+  layers[1] = new LayerJO2(this, color(123, 170, 232));
   layers[2] = new LayerJO3(color(232, 123, 123));
   // Miguel Neto
   layers[3] = new LayerMN1(color(123, 232, 180));
@@ -51,6 +51,8 @@ void setup() {
   layers[6] = new LayerJS1(color(123, 232, 232));
   layers[7] = new LayerJS2(color(188, 232, 123));
   layers[8] = new LayerJS3(color(232, 160, 123));
+
+  layerActive[0] = true; // JO1 active by default
 }
 
 void draw() {
@@ -59,9 +61,13 @@ void draw() {
 
   analyzeAudio();
 
-  Layer l = layers[currentLayer];
-  l.update(t, bass, mid, treble, burstA, burstB, burstC, isBeat, beatStrength, flashVal);
-  l.draw();
+  for (int i = 0; i < 9; i++) {
+    if (layerActive[i]) {
+      Layer l = layers[i];
+      l.update(t, bass, mid, treble, burstA, burstB, burstC, isBeat, beatStrength, flashVal);
+      l.draw();
+    }
+  }
 
   drawFlash();
 
@@ -119,15 +125,20 @@ void drawFlash() {
 
 void keyPressed() {
   switch (key) {
-    case '1': currentLayer = 0; break; // JO1
-    case '2': currentLayer = 1; break; // JO2
-    case '3': currentLayer = 2; break; // JO3
-    case '4': currentLayer = 3; break; // MN1
-    case '5': currentLayer = 4; break; // MN2
-    case '6': currentLayer = 5; break; // MN3
-    case '7': currentLayer = 6; break; // JS1
-    case '8': currentLayer = 7; break; // JS2
-    case '9': currentLayer = 8; break; // JS3
+    case '1': layerActive[0] = !layerActive[0]; break; // JO1
+    case '2': layerActive[1] = !layerActive[1]; break; // JO2
+    case '3': layerActive[2] = !layerActive[2]; break; // JO3
+    case '4': layerActive[3] = !layerActive[3]; break; // MN1
+    case '5': layerActive[4] = !layerActive[4]; break; // MN2
+    case '6': layerActive[5] = !layerActive[5]; break; // MN3
+    case '7': layerActive[6] = !layerActive[6]; break; // JS1
+    case '8': layerActive[7] = !layerActive[7]; break; // JS2
+    case '9': layerActive[8] = !layerActive[8]; break; // JS3
     case ' ': flashVal = 1.0; break;
+    case 'a':
+      for (int i = 0; i < 9; i++) {
+        if (layerActive[i]) layers[i].keyPressed(key);
+      }
+      break;
   }
 }

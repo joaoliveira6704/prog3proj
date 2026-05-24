@@ -15,4 +15,6 @@ abstract class Layer {
                        boolean isBeat, float beatStrength, float flashVal);
 
   abstract void draw();
+
+  void keyPressed(char k) {}
 }
