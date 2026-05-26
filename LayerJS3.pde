@@ -1,6 +1,6 @@
-// João Santos — layer 3
-// Press 'c' → a meteorite streaks across the screen with a glowing tail
-// and sparks of debris. Multiple meteorites can fly at once.
+// Joao Santos — Layer 3: Meteorites
+// Press C to spawn a meteorite that streaks across the screen
+// with a glowing tail and debris sparks. Multiple can fly at once.
 
 class LayerJS3 extends Layer {
   float bassP, midP, trebP, beatP;
@@ -30,7 +30,7 @@ class LayerJS3 extends Layer {
   void spawnMeteor() {
     for (int i = 0; i < MAX_METEORS; i++) {
       if (!mAlive[i]) {
-        // start somewhere off the top or left edge
+        // Start off the top or left edge
         float sx, sy;
         if (random(1) < 0.6) {
           sx = random(-0.1, 0.9) * width;
@@ -39,7 +39,7 @@ class LayerJS3 extends Layer {
           sx = -60;
           sy = random(-0.1, 0.6) * height;
         }
-        // aim toward bottom-right at a shallow-ish angle
+        // Aim toward bottom-right at a shallow angle
         float ang = random(PI * 0.18, PI * 0.42);
         float spd = random(12, 20);
         mX[i] = sx;
@@ -49,6 +49,7 @@ class LayerJS3 extends Layer {
         mSize[i] = random(5, 11);
         mAlive[i] = true;
         mHead[i] = 0;
+        // Initialize trail with spawn position
         for (int j = 0; j < TRAIL; j++) {
           mTX[i][j] = sx;
           mTY[i][j] = sy;
@@ -67,7 +68,7 @@ class LayerJS3 extends Layer {
           float a = random(TWO_PI);
           float s = random(0.4, 2.2);
           dVX[i] = cos(a) * s;
-          dVY[i] = sin(a) * s + 0.4;  // tiny gravity tilt
+          dVY[i] = sin(a) * s + 0.4;
           dLife[i] = 1.0;
           break;
         }
@@ -84,17 +85,21 @@ class LayerJS3 extends Layer {
     trebP = lerp(trebP, treble, 0.30);
     beatP = lerp(beatP, beatStrength, 0.28);
 
+    // Update alive meteors
     for (int i = 0; i < MAX_METEORS; i++) {
       if (!mAlive[i]) continue;
       mX[i] += mVX[i];
       mY[i] += mVY[i];
+      // Store current position in circular trail buffer
       mHead[i] = (mHead[i] + 1) % TRAIL;
       mTX[i][mHead[i]] = mX[i];
       mTY[i][mHead[i]] = mY[i];
       emitDebris(mX[i], mY[i], 2);
+      // Kill when off screen
       if (mX[i] > width + 120 || mY[i] > height + 120) mAlive[i] = false;
     }
 
+    // Update debris particles
     for (int i = 0; i < DEBRIS; i++) {
       if (dLife[i] <= 0) continue;
       dX[i] += dVX[i];
@@ -113,7 +118,7 @@ class LayerJS3 extends Layer {
     g.clear();
     g.pushStyle();
 
-    // debris first — sits behind meteor head
+    // Draw debris first (behind meteor heads)
     g.noStroke();
     for (int i = 0; i < DEBRIS; i++) {
       if (dLife[i] <= 0) continue;
@@ -123,17 +128,17 @@ class LayerJS3 extends Layer {
       g.ellipse(dX[i], dY[i], sz, sz);
     }
 
-    // meteors
+    // Draw meteor heads with trailing tails
     for (int i = 0; i < MAX_METEORS; i++) {
       if (!mAlive[i]) continue;
 
-      // tail: walk backward from head, fade + thin out
+      // Tail: walk backward from head position, fading and thinning
       int head = mHead[i];
       for (int j = 1; j < TRAIL; j++) {
         int idxA = (head - (j - 1) + TRAIL) % TRAIL;
         int idxB = (head - j + TRAIL) % TRAIL;
         float f = 1 - j / (float)TRAIL;
-        // hot core → warm tail
+        // Hot core to warm tail gradient
         float r = 255;
         float gr = 180 + f * 70;
         float b = 80 + f * 100;
@@ -142,7 +147,7 @@ class LayerJS3 extends Layer {
         g.line(mTX[i][idxA], mTY[i][idxA], mTX[i][idxB], mTY[i][idxB]);
       }
 
-      // glowing head — layered halo then bright core
+      // Glowing head — layered halo with bright white core
       g.noStroke();
       for (int gr = 4; gr >= 0; gr--) {
         float a = 50 + (4 - gr) * 40;

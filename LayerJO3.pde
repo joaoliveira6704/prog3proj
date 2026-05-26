@@ -1,4 +1,7 @@
-// João Oliveira — layer 3
+// Joao Oliveira — Layer 3: Lyrics + Lissajous Roaming + Text Explosion
+// Displays Planet Caravan lyrics that drift in Lissajous curves
+// Press E to explode the current text into falling block particles and advance to the next line
+
 class LayerJO3 extends Layer {
   color layerCol;
 
@@ -60,7 +63,7 @@ class LayerJO3 extends Layer {
     // Smooth the bass slightly
     this.currentBass = lerp(this.currentBass, bass, 0.1);
 
-    // Update all falling blocks
+    // Update all falling block particles
     for (int i = particles.size() - 1; i >= 0; i--) {
       BlockParticle p = particles.get(i);
       p.update(height, bass);
@@ -72,32 +75,30 @@ class LayerJO3 extends Layer {
 
   void drawLayer(PGraphics g) {
     g.clear();
-    // 1. Relaxed Psych Roaming (Lissajous Curves)
-    // Uses time to drift smoothly around the screen in sweeping figure-8s
+    // Compute roaming text position using Lissajous curves for smooth drifting
     float roamX = sin(time * 0.3) * cos(time * 0.15) * (width * 0.35);
     float roamY = cos(time * 0.2) * sin(time * 0.25) * (height * 0.35);
 
     currentTextX = (width / 2) + roamX;
     currentTextY = (height / 2) + roamY;
 
-    // 2. Normal Size text with slight breathing
-    // Base size is 48, with a small bump from the bass
+    // Text size breathes gently with sine and bass
     currentTextSize = 48 + (sin(time * 0.5) * 5) + (currentBass * 15);
 
     g.textSize(currentTextSize);
     g.textAlign(CENTER, CENTER);
 
-    // Force uppercase
     String displayTxt = lyrics[currentLine].toUpperCase();
 
-    // 3. Fake Bold / Psych Shadow Effect
+    // Draw colored shadow for a psych effect
     g.fill(red(layerCol) * 0.5, green(layerCol) * 0.5, blue(layerCol) * 0.5, 150);
-    g.text(displayTxt, currentTextX + 3, currentTextY + 3); // Slightly smaller offset for smaller text
+    g.text(displayTxt, currentTextX + 3, currentTextY + 3);
 
+    // Draw main text
     g.fill(layerCol);
     g.text(displayTxt, currentTextX, currentTextY);
 
-    // Draw the collapsed blocks
+    // Draw falling block particles from text explosions
     for (BlockParticle p : particles) {
       p.draw(g);
     }
@@ -107,13 +108,12 @@ class LayerJO3 extends Layer {
     explodeText();
   }
 
+  // Explode the current line into falling block particles and advance to the next line
   void explodeText() {
-    // Force uppercase here too so the particle math matches the drawn text
     String txt = lyrics[currentLine].toUpperCase();
     textSize(currentTextSize);
     float totalWidth = textWidth(txt);
 
-    // Start exploding exactly where the text is currently roaming
     float startX = currentTextX - (totalWidth / 2);
 
     for (int i = 0; i < txt.length(); i++) {
@@ -134,7 +134,7 @@ class LayerJO3 extends Layer {
   }
 }
 
-// --- Helper Class for the Heavy Decomposed Letters ---
+// Helper class for the decomposed letter blocks
 class BlockParticle {
   float x, y;
   float vx, vy;
@@ -148,7 +148,7 @@ class BlockParticle {
     this.x = x + random(-10, 10);
     this.y = y + random(-10, 10);
 
-    // Normal explosion burst
+    // Explosion burst velocity
     this.vx = random(-6, 6);
     this.vy = random(-5, 2);
 
@@ -161,7 +161,7 @@ class BlockParticle {
     this.shapeType = int(random(3));
     this.pColor = c;
 
-    // Reverted to original OFFF block sizes to match the smaller text
+    // Random block sizes
     if (this.shapeType == 0) {
       this.w = random(20, 50);
       this.h = this.w;
@@ -174,8 +174,9 @@ class BlockParticle {
     }
   }
 
+  // Apply gravity, bounce on floor, react to bass
   void update(float screenHeight, float bass) {
-    vy += 0.6; // Normal gravity
+    vy += 0.6;
 
     vx *= 0.98;
     vy *= 0.99;
@@ -190,6 +191,7 @@ class BlockParticle {
       vx *= 0.7;
       rotSpeed *= 0.7;
 
+      // Extra bounce on strong bass
       if (bass > 0.5) {
         vy -= bass * 2;
         vx += random(-bass, bass);

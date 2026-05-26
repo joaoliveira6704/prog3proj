@@ -1,11 +1,12 @@
-// Miguel Neto — LayerMN2
-// Permanent sand field + radial pulse kicks on beats
+// Miguel Neto — Layer 2: Sand Particle Field
+// A field of drifting sand particles that pulses radially on beats
+// Press S to manually trigger a pulse for testing
 
 class LayerMN2 extends Layer {
 
   ArrayList<SandParticle> particles = new ArrayList<SandParticle>();
 
-  // Pulse rings — visual only, for feedback
+  // Visual pulse rings that expand from the beat origin
   ArrayList<PulseRing> rings = new ArrayList<PulseRing>();
 
   float _mid, _treble, _bass;
@@ -13,7 +14,7 @@ class LayerMN2 extends Layer {
   float _beatStrength;
 
   static final int TARGET_PARTICLES = 600;
-  static final float PULSE_RADIUS   = 340; // max influence range of a beat pulse
+  static final float PULSE_RADIUS   = 340;
 
   LayerMN2(color c) { super(c); }
 
@@ -27,30 +28,29 @@ class LayerMN2 extends Layer {
     _isBeat      = isBeat;
     _beatStrength = beatStrength;
 
-    // ── Keep particle pool topped up ───────────────────────────
-    // Respawn wherever they fade out so the field stays full
+    // Keep particle pool topped up to target count
     while (particles.size() < TARGET_PARTICLES) {
       particles.add(new SandParticle());
     }
 
-    // ── Beat pulse ─────────────────────────────────────────────
+    // On beat, push particles outward from a random origin
     if (isBeat) {
       float ox = random(width  * 0.15, width  * 0.85);
       float oy = random(height * 0.15, height * 0.85);
       float force = 1.8 + beatStrength * 4.5;
 
-      // Kick every particle based on distance from pulse origin
+      // Apply radial force to particles within pulse radius
       for (SandParticle p : particles) {
         float dx = p.x - ox;
         float dy = p.y - oy;
         float dist = sqrt(dx * dx + dy * dy);
         if (dist < PULSE_RADIUS && dist > 0) {
           float falloff = 1.0 - (dist / PULSE_RADIUS);
-          falloff = falloff * falloff; // quadratic — strong at center, zero at edge
+          falloff = falloff * falloff; // quadratic falloff
           float f = force * falloff;
           p.vx += (dx / dist) * f;
           p.vy += (dy / dist) * f;
-          p.pulseGlow = falloff; // particles near origin flash brighter
+          p.pulseGlow = falloff;
         }
       }
 
@@ -58,14 +58,14 @@ class LayerMN2 extends Layer {
       rings.add(new PulseRing(ox, oy, beatStrength));
     }
 
-    // ── Update particles ────────────────────────────────────────
+    // Update particles
     for (int i = particles.size() - 1; i >= 0; i--) {
       SandParticle p = particles.get(i);
       p.update(mid, treble);
       if (p.isDead()) particles.remove(i);
     }
 
-    // ── Update rings ────────────────────────────────────────────
+    // Update rings
     for (int i = rings.size() - 1; i >= 0; i--) {
       PulseRing r = rings.get(i);
       r.update();
@@ -85,7 +85,7 @@ class LayerMN2 extends Layer {
   }
 
   void keyPressed(char k) {
-    // Manual pulse for testing: press 's'
+    // Manual pulse for testing
     if (k == 's' || k == 'S') {
       _isBeat      = true;
       _beatStrength = 0.8;
@@ -93,24 +93,23 @@ class LayerMN2 extends Layer {
     }
   }
 
-  // ── Sand particle ─────────────────────────────────────────────
+  // Sand particle that drifts and reacts to audio
   class SandParticle {
     float x, y;
     float vx, vy;
     float life, maxLife;
     float sz;
-    float pulseGlow = 0; // extra brightness from a nearby beat pulse
+    float pulseGlow = 0;
 
     SandParticle() {
       reset();
     }
 
     void reset() {
-      // Spawn anywhere on canvas, including off-edge for natural entry
       x  = random(-20, width  + 20);
       y  = random(-20, height + 20);
 
-      // Ambient: slow random drift
+      // Ambient slow random drift
       float speed = random(0.05, 0.35);
       float angle = random(TWO_PI);
       vx = cos(angle) * speed;
@@ -123,25 +122,22 @@ class LayerMN2 extends Layer {
     }
 
     void update(float mid, float treble) {
-      // Apply ambient audio modulation — gentle sway
+      // Audio modulation — gentle sway from mid and treble
       vx += random(-0.01, 0.01) + sin(y * 0.008) * mid * 0.04;
       vy += random(-0.01, 0.01) + cos(x * 0.008) * treble * 0.03;
 
-      // Friction — velocity decays toward ambient drift speed
       vx *= 0.965;
       vy *= 0.965;
 
       x += vx;
       y += vy;
 
-      // Fade pulse glow
       pulseGlow *= 0.88;
 
       life--;
     }
 
     boolean isDead() {
-      // Also die if drifted well off-screen (replaced immediately anyway)
       return life <= 0
           || x < -60 || x > width  + 60
           || y < -60 || y > height + 60;
@@ -156,15 +152,14 @@ class LayerMN2 extends Layer {
 
       float glow   = min(1.0, envelope + pulseGlow * 0.9);
       float alpha  = glow * 200;
-      float drawSz = sz * (1.0 + pulseGlow * 1.6); // particles swell briefly
+      float drawSz = sz * (1.0 + pulseGlow * 1.6);
 
       g.fill(255, 255, 255, alpha);
       g.ellipse(x, y, drawSz, drawSz);
     }
   }
 
-  // ── Pulse ring ────────────────────────────────────────────────
-  // Expanding ring drawn at the beat origin — purely visual cue
+  // Expanding ring visual cue for beat pulses
   class PulseRing {
     float ox, oy;
     float radius = 0;
@@ -181,7 +176,7 @@ class LayerMN2 extends Layer {
 
     void update() {
       radius += speed;
-      speed  *= 0.97; // ring decelerates
+      speed  *= 0.97;
       alpha  *= 0.88;
     }
 
@@ -191,7 +186,7 @@ class LayerMN2 extends Layer {
       g.stroke(255, 255, 255, alpha);
       g.strokeWeight(0.8);
       g.ellipse(ox, oy, radius * 2, radius * 2);
-      // second inner ring, slightly behind
+      // Second inner ring
       if (radius > 30) {
         g.stroke(255, 255, 255, alpha * 0.4);
         g.ellipse(ox, oy, (radius - 25) * 2, (radius - 25) * 2);

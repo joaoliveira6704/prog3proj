@@ -1,5 +1,7 @@
-// João Santos — layer 1
-// Event horizon of a black hole. Black & white.
+// Joao Santos — Layer 1: Black Hole Event Horizon
+// Black and white simulation of a black hole with orbiting starfield,
+// accretion disk, photon ring, and beat-reactive shockwaves
+// Press Z to trigger a pull effect
 
 class LayerJS1 extends Layer {
   float bassP, midP, trebP, beatP, swirl, shockR, shockA;
@@ -16,6 +18,7 @@ class LayerJS1 extends Layer {
 
   LayerJS1(color c) {
     super(c);
+    // Initialize star positions and brightness
     for (int i = 0; i < STARS; i++) {
       starA[i] = random(TWO_PI);
       starR[i] = random(0.6, 1.8);
@@ -31,12 +34,14 @@ class LayerJS1 extends Layer {
               float burstA, float burstB, float burstC,
               boolean isBeat, float beatStrength, float flashVal) {
 
+    // Smooth all audio parameters
     bassP = lerp(bassP, bass, 0.18);
     midP  = lerp(midP,  mid,  0.20);
     trebP = lerp(trebP, treble, 0.30);
     beatP = lerp(beatP, beatStrength, 0.25);
     swirl += 0.006 + midP * 0.08;
 
+    // Trigger shockwave on beat (if not already active)
     if (isBeat && shockA < 0.2) {
       shockR = 0;
       shockA = 1;
@@ -65,7 +70,7 @@ class LayerJS1 extends Layer {
     float diskR   = horizonR * 2.4;
     float photonR = horizonR * 1.08;
 
-    // starfield warp toward center
+    // Draw starfield with warp toward center on pull
     g.noStroke();
     for (int i = 0; i < STARS; i++) {
       float a = starA[i] + swirl * (0.15 + pull * 1.2) * starS[i];
@@ -78,7 +83,7 @@ class LayerJS1 extends Layer {
       g.ellipse(x, y, sz, sz);
     }
 
-    // accretion disk — concentric warped rings (reduced: 40 rings, 60 steps)
+    // Accretion disk — concentric warped rings
     g.noFill();
     int ringCount = 40;
     int steps = 60;
@@ -102,7 +107,7 @@ class LayerJS1 extends Layer {
       g.endShape(CLOSE);
     }
 
-    // photon ring — bright thin halo
+    // Photon ring — bright thin halos around the event horizon
     g.noFill();
     for (int i = 0; i < 4; i++) {
       float a = 255 - i * 50;
@@ -112,7 +117,7 @@ class LayerJS1 extends Layer {
       g.ellipse(cx, cy, photonR * 2 + i + bulge, photonR * 2 + i + bulge);
     }
 
-    // shockwave on beat
+    // Shockwave expanding on beat
     if (shockA > 0.02) {
       g.noFill();
       g.stroke(255, shockA * 220);
@@ -120,7 +125,7 @@ class LayerJS1 extends Layer {
       g.ellipse(cx, cy, shockR * 2, shockR * 2);
     }
 
-    // event horizon — pure black disk with soft white rim
+    // Event horizon — pure black disk with soft white rim
     g.noStroke();
     g.fill(255, 90 + beatP * 120 + pull * 140);
     float rim = horizonR * 2 + 6 + pull * horizonR * 0.8;

@@ -1,5 +1,7 @@
-// João Santos — layer 2 (lightweight + mic)
-// Infinite tunnel of receding triangles. Reacts to global audio + microphone.
+// Joao Santos — Layer 2: Infinite Triangle Tunnel
+// A receding tunnel of rotating equilateral triangles with rainbow colors
+// Reacts to global audio and optional microphone input
+// Press X for a speed kick
 
 import processing.sound.*;
 
@@ -10,12 +12,12 @@ class LayerJS2 extends Layer {
   float shakeX, shakeY;
   float kick;
 
-  // Mic input (lightweight: AudioIn + Amplitude only, no extra FFT)
+  // Mic input using AudioIn + Amplitude (no extra FFT)
   AudioIn micIn;
   Amplitude micAmp;
   boolean micReady = false;
   boolean micTried = false;
-  float micVol;   // smoothed mic volume 0..1
+  float micVol;
 
   static final int RINGS = 30;
   static final float SPACING = 1.6;
@@ -75,7 +77,7 @@ class LayerJS2 extends Layer {
     trebP = lerp(trebP, treble, 0.30);
     beatP = lerp(beatP, beatStrength, 0.30);
 
-    // forward speed — music + mic volume
+    // Forward speed driven by audio and mic volume
     float speed = 0.22 + bassP * 0.45 + beatP * 0.30 + kick * 0.7
                 + micVol * 0.5;
     zPos += speed;
@@ -83,12 +85,13 @@ class LayerJS2 extends Layer {
     roll += 0.005 + midP * 0.02 + micVol * 0.04;
     if (isBeat) roll += random(-0.08, 0.08);
 
+    // Camera shake
     float shakeAmt = (beatP * 10 + kick * 20 + micVol * 25) * (1 + trebP);
     shakeX = lerp(shakeX, random(-shakeAmt, shakeAmt), 0.4);
     shakeY = lerp(shakeY, random(-shakeAmt, shakeAmt), 0.4);
 
     kick  *= 0.90;
-    micVol *= 0.96; // gentle decay when mic goes quiet
+    micVol *= 0.96;
   }
 
   void keyPressed(char k) {
@@ -104,11 +107,13 @@ class LayerJS2 extends Layer {
     float focal = min(width, height) * 0.85;
 
     g.noStroke();
+    // Semi-transparent black for motion blur effect
     g.fill(0, 50);
     g.rect(0, 0, width, height);
 
     float wrap = RINGS * SPACING;
 
+    // Draw rings from far to near
     for (int i = RINGS - 1; i >= 0; i--) {
       float z = ((i * SPACING) - (zPos % wrap) + wrap) % wrap;
       if (z < NEAR) continue;
@@ -120,13 +125,14 @@ class LayerJS2 extends Layer {
       float depthT = constrain(1 - z / FAR, 0, 1);
       float alpha = depthT * 200;
 
+      // Cycle through rainbow colors based on position
       int colorIdx = ((i + (int)(zPos * 0.5)) % rainbow.length + rainbow.length) % rainbow.length;
       color c = rainbow[colorIdx];
 
       float ang = ringPhase[i] + ringSpin[i] * zPos * 0.05 + roll
                 + sin(zPos * 0.07 + i * 0.25) * (0.12 + trebP * 0.3);
 
-      // Pre-calc vertices
+      // Pre-compute equilateral triangle vertices
       float ca = cos(ang);
       float sa = sin(ang);
 
@@ -142,12 +148,13 @@ class LayerJS2 extends Layer {
       g.strokeWeight(1.5 + beatP + kick * 1.2 + micVol * 1.5);
       g.triangle(x0, y0, x1, y1, x2, y2);
 
+      // White inner stroke
       g.stroke(255, alpha * 0.7);
       g.strokeWeight(1.0);
       g.triangle(x0, y0, x1, y1, x2, y2);
     }
 
-    // mic-off indicator (faint, top-right)
+    // Mic-off indicator
     if (!micReady) {
       g.fill(255, 80);
       g.textAlign(RIGHT, TOP);

@@ -1,6 +1,6 @@
-// Miguel Neto — MN1
-// Three Sims-style wireframe prisms that shatter when treble spikes
-// and rebuild as energy drops
+// Miguel Neto — Layer 1: Shattering Wireframe Octahedrons
+// Three wireframe octahedrons that rotate and shatter when treble spikes
+// Rebuild when energy drops back down
 
 class LayerMN1 extends Layer {
 
@@ -9,24 +9,23 @@ class LayerMN1 extends Layer {
   float   baseSize = 80;
   float   bass, treble;
 
-  // Shatter state
+  // Shatter state machine
   static final int STATE_WHOLE    = 0;
   static final int STATE_BREAKING = 1;
   static final int STATE_BROKEN   = 2;
   static final int STATE_REBUILDING = 3;
 
   int   state          = STATE_WHOLE;
-  float trebleThreshold = 0.65;   // treble level that triggers shatter
-  float trebleSmooth   = 0;       // smoothed treble to avoid flicker
+  float trebleThreshold = 0.65;
+  float trebleSmooth   = 0;
 
   // Shards — fragments of the broken prisms
   ArrayList<Shard> shards = new ArrayList<Shard>();
 
-  // Rebuild timer — how long before they come back
   float rebuildTimer = 0;
-  float rebuildDuration = 120;   // frames
+  float rebuildDuration = 120;
 
-  // Prism opacity during rebuild (0=invisible, 1=fully drawn)
+  // Prism opacity during rebuild phase
   float rebuildAlpha = 1.0;
 
   LayerMN1(color c) { super(c); }
@@ -41,14 +40,16 @@ class LayerMN1 extends Layer {
     // Smooth treble to avoid rapid flickering
     trebleSmooth = lerp(trebleSmooth, treble, 0.08);
 
+    // Rotate each octahedron at different speeds
     for (int i = 0; i < 3; i++) rotY[i] += speedY[i];
 
-    // Update shards
+    // Update existing shards and remove dead ones
     for (int i = shards.size() - 1; i >= 0; i--) {
       shards.get(i).update();
       if (shards.get(i).isDead()) shards.remove(i);
     }
 
+    // State machine transitions
     switch (state) {
 
       case STATE_WHOLE:
@@ -60,7 +61,6 @@ class LayerMN1 extends Layer {
         break;
 
       case STATE_BREAKING:
-        // Wait for shards to finish then go to BROKEN
         if (shards.size() == 0) {
           state = STATE_BROKEN;
           rebuildTimer = 0;
@@ -69,7 +69,7 @@ class LayerMN1 extends Layer {
 
       case STATE_BROKEN:
         rebuildTimer++;
-        // Start rebuilding once treble drops back down
+        // Start rebuilding once treble drops and cooldown passes
         if (trebleSmooth < trebleThreshold * 0.5 && rebuildTimer > 30) {
           state = STATE_REBUILDING;
           rebuildTimer = 0;
@@ -108,7 +108,7 @@ class LayerMN1 extends Layer {
     }
   }
 
-  // ── Spawn shards for all 3 prisms ──────────────────────────
+  // Spawn shards for all 3 prisms
   void triggerShatter() {
     shards.clear();
     float s       = baseSize + bass * 120;
@@ -116,7 +116,6 @@ class LayerMN1 extends Layer {
     for (int i = 0; i < 3; i++) {
       float cx = spacing * (i + 1);
       float cy = height / 2.0;
-      // Spawn shards radiating from each prism centre
       int numShards = 18;
       for (int j = 0; j < numShards; j++) {
         shards.add(new Shard(cx, cy, s));
@@ -124,7 +123,7 @@ class LayerMN1 extends Layer {
     }
   }
 
-  // ── Draw one wireframe octahedron ───────────────────────────
+  // Draw one wireframe octahedron using perspective projection
   void drawOctahedron(PGraphics g, float cx, float cy, float s, float ry, float alpha) {
     float[][] v3 = {
       {  0,      -s * 1.4,  0  },
@@ -138,13 +137,16 @@ class LayerMN1 extends Layer {
     float[][] v = new float[6][2];
     for (int i = 0; i < 6; i++) {
       float x  = v3[i][0], y = v3[i][1], z = v3[i][2];
+      // Rotate around Y axis
       float rx = x * cos(ry) + z * sin(ry);
       float rz = -x * sin(ry) + z * cos(ry);
+      // Perspective projection
       float d  = 600.0 / (600 + rz + s * 2);
       v[i][0]  = cx + rx * d;
       v[i][1]  = cy + y  * d;
     }
 
+    // 8 triangular faces of the octahedron
     int[][] faces = {
       {0,1,2}, {0,2,3}, {0,3,4}, {0,4,1},
       {5,2,1}, {5,3,2}, {5,4,3}, {5,1,4}
@@ -162,7 +164,7 @@ class LayerMN1 extends Layer {
     }
   }
 
-  // ── Shard: a small line fragment that flies outward ─────────
+  // Shard: a small line fragment that flies outward from the shattered prism
   class Shard {
     float x, y;
     float vx, vy;
