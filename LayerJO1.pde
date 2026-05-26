@@ -77,8 +77,9 @@ class LayerJO1 extends Layer {
     if (k == 'q' || k == 'Q') spawnRandom();
   }
 
-  void draw() {
-    for (Prism p : prisms) drawPrism(p);
+  void drawLayer(PGraphics g) {
+    g.clear();
+    for (Prism p : prisms) drawPrism(g, p);
   }
 
   // ── Public spawn API ─────────────────────────
@@ -113,7 +114,7 @@ class LayerJO1 extends Layer {
   }
 
   // ── Draw one prism ───────────────────────────
-  void drawPrism(Prism p) {
+  void drawPrism(PGraphics g, Prism p) {
     float s = p.size;
     float h = s * 1.6;
     int   a = (int)(p.alpha * 255);
@@ -151,8 +152,8 @@ class LayerJO1 extends Layer {
       order[j+1] = key;
     }
 
-    pushMatrix();
-    noStroke();
+    g.pushMatrix();
+    g.noStroke();
 
     for (int fi = 0; fi < 4; fi++) {
       int f = order[fi];
@@ -161,43 +162,43 @@ class LayerJO1 extends Layer {
 
       if (faceId[f].equals("base")) {
         // Rainbow-tinted base
-        beginShape();
-        fill(255, 0,  60, (int)(a * 0.5));  vertex(pa[0], pa[1]);
-        fill(0, 200, 255, (int)(a * 0.5));  vertex(pb[0], pb[1]);
-        fill(120, 0, 255, (int)(a * 0.5));  vertex(pc[0], pc[1]);
-        endShape(CLOSE);
+        g.beginShape();
+        g.fill(255, 0,  60, (int)(a * 0.5));  g.vertex(pa[0], pa[1]);
+        g.fill(0, 200, 255, (int)(a * 0.5));  g.vertex(pb[0], pb[1]);
+        g.fill(120, 0, 255, (int)(a * 0.5));  g.vertex(pc[0], pc[1]);
+        g.endShape(CLOSE);
       } else {
         // Glass-like grey face, brightness varies by face
         float bright = map(faceZ[f], -s, s, 160, 230);
-        fill(bright, bright + 10, bright + 20, (int)(a * 0.72));
-        beginShape();
-        vertex(pa[0], pa[1]);
-        vertex(pb[0], pb[1]);
-        vertex(pc[0], pc[1]);
-        endShape(CLOSE);
+        g.fill(bright, bright + 10, bright + 20, (int)(a * 0.72));
+        g.beginShape();
+        g.vertex(pa[0], pa[1]);
+        g.vertex(pb[0], pb[1]);
+        g.vertex(pc[0], pc[1]);
+        g.endShape(CLOSE);
       }
 
       // Edge outline
-      stroke(255, 255, 255, (int)(a * 0.55));
-      strokeWeight(0.8);
-      noFill();
-      beginShape();
-      vertex(pa[0], pa[1]);
-      vertex(pb[0], pb[1]);
-      vertex(pc[0], pc[1]);
-      endShape(CLOSE);
-      noStroke();
+      g.stroke(255, 255, 255, (int)(a * 0.55));
+      g.strokeWeight(0.8);
+      g.noFill();
+      g.beginShape();
+      g.vertex(pa[0], pa[1]);
+      g.vertex(pb[0], pb[1]);
+      g.vertex(pc[0], pc[1]);
+      g.endShape(CLOSE);
+      g.noStroke();
     }
 
-    popMatrix();
+    g.popMatrix();
 
     // ── White input ray ───────────────────────
     float[] entryPt = v[3];
     float[] rayStart = { entryPt[0] - s * 1.1, entryPt[1] - s * 0.35 };
 
-    stroke(255, 255, 255, (int)(a * 0.8));
-    strokeWeight(1.5);
-    line(rayStart[0], rayStart[1], entryPt[0], entryPt[1]);
+    g.stroke(255, 255, 255, (int)(a * 0.8));
+    g.strokeWeight(1.5);
+    g.line(rayStart[0], rayStart[1], entryPt[0], entryPt[1]);
 
     // ── Rainbow exit rays ─────────────────────
     float[] exitPt = v[2];
@@ -211,17 +212,17 @@ class LayerJO1 extends Layer {
       color(200,   0, 255)
     };
 
-    strokeWeight(1.8);
+    g.strokeWeight(1.8);
     for (int i = 0; i < rColors.length; i++) {
       float angle = -0.22 + i * 0.075;
       float len   = s * 1.8;
       int rc = rColors[i];
-      stroke(red(rc), green(rc), blue(rc), (int)(a * 0.78));
-      line(exitPt[0], exitPt[1],
-           exitPt[0] + cos(angle) * len,
-           exitPt[1] + sin(angle) * len);
+      g.stroke(red(rc), green(rc), blue(rc), (int)(a * 0.78));
+      g.line(exitPt[0], exitPt[1],
+             exitPt[0] + cos(angle) * len,
+             exitPt[1] + sin(angle) * len);
     }
 
-    noStroke();
+    g.noStroke();
   }
 }

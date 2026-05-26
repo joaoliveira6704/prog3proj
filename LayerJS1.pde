@@ -55,8 +55,9 @@ class LayerJS1 extends Layer {
     }
   }
 
-  void draw() {
-    pushStyle();
+  void drawLayer(PGraphics g) {
+    g.clear();
+    g.pushStyle();
     float cx = width * 0.5;
     float cy = height * 0.5;
     float base = min(width, height) * 0.18;
@@ -65,29 +66,30 @@ class LayerJS1 extends Layer {
     float photonR = horizonR * 1.08;
 
     // starfield warp toward center
-    noStroke();
+    g.noStroke();
     for (int i = 0; i < STARS; i++) {
       float a = starA[i] + swirl * (0.15 + pull * 1.2) * starS[i];
       float rr = starR[i] * min(width, height) * 0.5 * (1 + pull * 0.6);
       float x = cx + cos(a) * rr;
       float y = cy + sin(a) * rr;
       float br = 180 * starS[i] + trebP * 70 + pull * 80;
-      fill(br);
+      g.fill(br);
       float sz = 1 + starS[i] * (1 + trebP * 2) + pull * 1.5;
-      ellipse(x, y, sz, sz);
+      g.ellipse(x, y, sz, sz);
     }
 
-    // accretion disk — concentric warped rings
-    noFill();
-    for (int r = 0; r < 60; r++) {
-      float rad = lerp(photonR, diskR, r / 60.0);
+    // accretion disk — concentric warped rings (reduced: 40 rings, 60 steps)
+    g.noFill();
+    int ringCount = 40;
+    int steps = 60;
+    for (int r = 0; r < ringCount; r++) {
+      float rad = lerp(photonR, diskR, r / (float)ringCount);
       float warp = sin(swirl * 2 + r * 0.35) * (4 + midP * 18);
-      float bright = 255 * pow(1 - r / 60.0, 1.6) * (0.35 + midP * 0.9);
+      float bright = 255 * pow(1 - r / (float)ringCount, 1.6) * (0.35 + midP * 0.9);
       bright = constrain(bright, 0, 255);
-      stroke(bright);
-      strokeWeight(1 + trebP * 1.2);
-      beginShape();
-      int steps = 90;
+      g.stroke(bright);
+      g.strokeWeight(1 + trebP * 1.2);
+      g.beginShape();
       for (int k = 0; k <= steps; k++) {
         float a = TWO_PI * k / steps;
         float squash = 1 + 0.35 * sin(a * 2 + swirl);
@@ -95,37 +97,37 @@ class LayerJS1 extends Layer {
         float ry = (rad + warp * cos(a + swirl * 0.6)) * 0.55;
         float x = cx + cos(a) * rx;
         float y = cy + sin(a) * ry;
-        vertex(x, y);
+        g.vertex(x, y);
       }
-      endShape(CLOSE);
+      g.endShape(CLOSE);
     }
 
     // photon ring — bright thin halo
-    noFill();
+    g.noFill();
     for (int i = 0; i < 4; i++) {
       float a = 255 - i * 50;
-      stroke(a);
-      strokeWeight(1.5 + i * 0.6 + trebP * 2 + pull * 3);
+      g.stroke(a);
+      g.strokeWeight(1.5 + i * 0.6 + trebP * 2 + pull * 3);
       float bulge = pull * horizonR * 0.6;
-      ellipse(cx, cy, photonR * 2 + i + bulge, photonR * 2 + i + bulge);
+      g.ellipse(cx, cy, photonR * 2 + i + bulge, photonR * 2 + i + bulge);
     }
 
     // shockwave on beat
     if (shockA > 0.02) {
-      noFill();
-      stroke(255, shockA * 220);
-      strokeWeight(2 + shockA * 4);
-      ellipse(cx, cy, shockR * 2, shockR * 2);
+      g.noFill();
+      g.stroke(255, shockA * 220);
+      g.strokeWeight(2 + shockA * 4);
+      g.ellipse(cx, cy, shockR * 2, shockR * 2);
     }
 
     // event horizon — pure black disk with soft white rim
-    noStroke();
-    fill(255, 90 + beatP * 120 + pull * 140);
+    g.noStroke();
+    g.fill(255, 90 + beatP * 120 + pull * 140);
     float rim = horizonR * 2 + 6 + pull * horizonR * 0.8;
-    ellipse(cx, cy, rim, rim);
-    fill(0);
-    ellipse(cx, cy, horizonR * 2, horizonR * 2);
+    g.ellipse(cx, cy, rim, rim);
+    g.fill(0);
+    g.ellipse(cx, cy, horizonR * 2, horizonR * 2);
 
-    popStyle();
+    g.popStyle();
   }
 }

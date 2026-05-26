@@ -88,21 +88,22 @@ class LayerMN1 extends Layer {
     }
   }
 
-  void draw() {
+  void drawLayer(PGraphics g) {
+    g.clear();
     float s       = baseSize + bass * 120;
     float spacing = width / 4.0;
 
     // Draw shards always
-    for (Shard sh : shards) sh.draw();
+    for (Shard sh : shards) sh.draw(g);
 
     // Draw prisms when whole or rebuilding
     if (state == STATE_WHOLE || state == STATE_REBUILDING) {
       float a = rebuildAlpha * 200;
-      stroke(255, 255, 255, a);
-      strokeWeight(1.2);
-      noFill();
+      g.stroke(255, 255, 255, a);
+      g.strokeWeight(1.2);
+      g.noFill();
       for (int i = 0; i < 3; i++) {
-        drawOctahedron(spacing * (i + 1), height / 2.0, s, rotY[i], a);
+        drawOctahedron(g, spacing * (i + 1), height / 2.0, s, rotY[i], a);
       }
     }
   }
@@ -124,7 +125,7 @@ class LayerMN1 extends Layer {
   }
 
   // ── Draw one wireframe octahedron ───────────────────────────
-  void drawOctahedron(float cx, float cy, float s, float ry, float alpha) {
+  void drawOctahedron(PGraphics g, float cx, float cy, float s, float ry, float alpha) {
     float[][] v3 = {
       {  0,      -s * 1.4,  0  },
       {  s,       0,        0  },
@@ -149,15 +150,15 @@ class LayerMN1 extends Layer {
       {5,2,1}, {5,3,2}, {5,4,3}, {5,1,4}
     };
 
-    stroke(255, 255, 255, alpha);
-    strokeWeight(1.2);
-    noFill();
+    g.stroke(255, 255, 255, alpha);
+    g.strokeWeight(1.2);
+    g.noFill();
     for (int[] f : faces) {
-      beginShape();
-      vertex(v[f[0]][0], v[f[0]][1]);
-      vertex(v[f[1]][0], v[f[1]][1]);
-      vertex(v[f[2]][0], v[f[2]][1]);
-      endShape(CLOSE);
+      g.beginShape();
+      g.vertex(v[f[0]][0], v[f[0]][1]);
+      g.vertex(v[f[1]][0], v[f[1]][1]);
+      g.vertex(v[f[2]][0], v[f[2]][1]);
+      g.endShape(CLOSE);
     }
   }
 
@@ -195,13 +196,13 @@ class LayerMN1 extends Layer {
 
     boolean isDead() { return life <= 0; }
 
-    void draw() {
+    void draw(PGraphics g) {
       float alpha = map(life, 0, maxLife, 0, 200);
-      stroke(255, 255, 255, alpha);
-      strokeWeight(1.0);
+      g.stroke(255, 255, 255, alpha);
+      g.strokeWeight(1.0);
       float dx = cos(angle) * len * 0.5;
       float dy = sin(angle) * len * 0.5;
-      line(x - dx, y - dy, x + dx, y + dy);
+      g.line(x - dx, y - dy, x + dx, y + dy);
     }
   }
 }

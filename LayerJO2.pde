@@ -21,7 +21,7 @@ class LayerJO2 extends Layer {
       float x = random(width * 0.2, width * 0.8);
       float y = random(height * 0.2, height * 0.8);
       // INCREASED: Initial branches are now much longer (was 100-180)
-      nodes.add(new Node(x, y, random(TWO_PI), random(250, 450))); 
+      nodes.add(new Node(x, y, random(TWO_PI), random(250, 450)));
     }
   }
 
@@ -34,7 +34,7 @@ class LayerJO2 extends Layer {
     bassS = lerp(bassS, bass, 0.08);
     midS  = lerp(midS,  mid,  0.08);
     trebS = lerp(trebS, treble, 0.08);
-    
+
     // Calculate overall amplitude
     float currentAmp = (bass + mid + treble) / 3.0;
     smoothAmp = lerp(smoothAmp, currentAmp, 0.1);
@@ -43,7 +43,7 @@ class LayerJO2 extends Layer {
     if (isBeat) {
       beatDecay = max(beatStrength, 0.8);
     }
-    beatDecay *= 0.9; 
+    beatDecay *= 0.9;
 
     // ── Growth driven by music ───────────────────
     growthAge += 0.2 + bass * 4 + mid * 2;
@@ -103,37 +103,42 @@ class LayerJO2 extends Layer {
     return false;
   }
 
-  void draw() {
+  void drawLayer(PGraphics g) {
+    g.clear();
     if (nodes.isEmpty() || visibility < 0.01) return;
-    pushStyle();
-    
+    g.pushStyle();
+
     // 1. Draw the organic curved branches
-    for (Node n : nodes) n.draw(currentT, bassS, trebS, visibility, smoothAmp);
+    for (Node n : nodes) n.draw(g, currentT, bassS, trebS, visibility, smoothAmp);
 
     // 2. The "Casey Reas" Proximity Web
-    colorMode(RGB, 255);
-    strokeWeight(1.0); // INCREASED: slightly thicker web lines
-    
-    // INCREASED: The nodes will reach out to connect from much further away
-    float connectionDistance = 80 + (smoothAmp * 80); 
-    
+    g.colorMode(RGB, 255);
+    g.strokeWeight(1.0); // INCREASED: slightly thicker web lines
+
+    // proximity web — squared distance avoids sqrt()
+    float connDist = 80 + (smoothAmp * 80);
+    float connDistSq = connDist * connDist;
+
     for (int i = 0; i < nodes.size(); i++) {
       Node n1 = nodes.get(i);
-      if (n1.growT < 0.5) continue; 
-      
+      if (n1.growT < 0.5) continue;
+
       for (int j = i + 1; j < nodes.size(); j++) {
         Node n2 = nodes.get(j);
         if (n2.growT < 0.5) continue;
-        
-        float d = dist(n1.endX, n1.endY, n2.endX, n2.endY);
-        if (d < connectionDistance) {
-          float alphaMap = map(d, 0, connectionDistance, 80, 0); 
-          stroke(200, 200, 255, alphaMap * visibility); 
-          line(n1.endX, n1.endY, n2.endX, n2.endY);
+
+        float dx = n1.endX - n2.endX;
+        float dy = n1.endY - n2.endY;
+        float dSq = dx * dx + dy * dy;
+        if (dSq < connDistSq) {
+          float d = sqrt(dSq);            // sqrt only when inside range
+          float alphaMap = map(d, 0, connDist, 80, 0);
+          g.stroke(200, 200, 255, alphaMap * visibility);
+          g.line(n1.endX, n1.endY, n2.endX, n2.endY);
         }
       }
     }
-    popStyle();
+    g.popStyle();
   }
 
   // ── Node ─────────────────────────────────────
@@ -148,15 +153,15 @@ class LayerJO2 extends Layer {
       this.x = x; this.y = y;
       this.angle = angle; this.targetLen = len;
       endX = x; endY = y;
-      growT = 0; 
-      tailT = 0; 
+      growT = 0;
+      tailT = 0;
       pulse = 0;
       seed = (int)random(10000);
     }
 
     void grow(float t, float mid) {
       growT = min(growT + 0.018 + mid * 0.015, 1);
-      
+
       if (growT > 0.4) {
         tailT = min(tailT + 0.012 + mid * 0.01, 1);
       }
@@ -171,30 +176,30 @@ class LayerJO2 extends Layer {
 
       pulse *= 0.88;
     }
-    
+
     boolean isDead() {
       return tailT >= 1;
     }
 
-    void draw(float t, float bass, float treb, float vis, float amp) {
-      float g = growT;
-      if (g < 0.01) return;
+    void draw(PGraphics g, float t, float bass, float treb, float vis, float amp) {
+      float gT = growT;
+      if (gT < 0.01) return;
 
-      float a = constrain(vis * (40 + 100 * g) * (1.0 - tailT), 0, 255); 
+      float a = constrain(vis * (40 + 100 * gT) * (1.0 - tailT), 0, 255);
       if (a < 2) return;
 
       float pu = pulse;
       // INCREASED: The main branch lines are thicker
-      float sw = constrain(1.5 + amp * 3.0, 0.8, 4.0); 
+      float sw = constrain(1.5 + amp * 3.0, 0.8, 4.0);
 
       float hue = (angle * 180 / PI + seed * 0.5 + t * 5 + treb * 20) % 360;
-      float sat = 60 + bass * 40;  
-      float bri = 200 + treb * 55; 
+      float sat = 60 + bass * 40;
+      float bri = 200 + treb * 55;
 
-      colorMode(HSB, 360, 255, 255, 255);
-      stroke(hue, sat, bri, a * 0.5);
-      strokeWeight(sw);
-      noFill();
+      g.colorMode(HSB, 360, 255, 255, 255);
+      g.stroke(hue, sat, bri, a * 0.5);
+      g.strokeWeight(sw);
+      g.noFill();
 
       float currentStartX = lerp(x, endX, tailT);
       float currentStartY = lerp(y, endY, tailT);
@@ -202,28 +207,28 @@ class LayerJO2 extends Layer {
       float d = dist(currentStartX, currentStartY, endX, endY);
       float n1 = (noise(seed, t * 0.2) - 0.5) * 1.5;
       float n2 = (noise(seed + 100, t * 0.2) - 0.5) * 1.5;
-      
+
       float cp1X = currentStartX + cos(angle + n1) * (d * 0.5);
       float cp1Y = currentStartY + sin(angle + n1) * (d * 0.5);
-      
+
       float cp2X = endX + cos(angle + PI + n2) * (d * 0.5);
       float cp2Y = endY + sin(angle + PI + n2) * (d * 0.5);
 
-      bezier(currentStartX, currentStartY, cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+      g.bezier(currentStartX, currentStartY, cp1X, cp1Y, cp2X, cp2Y, endX, endY);
 
       if (tailT < 0.8) {
         // INCREASED: The circular joints at the end of the nodes are larger
         float ns = 8 + pu * 25 + amp * 15;
-        stroke(hue, sat, bri, a * 0.4);
-        strokeWeight(1.0);
-        ellipse(endX, endY, ns, ns);
-        
+        g.stroke(hue, sat, bri, a * 0.4);
+        g.strokeWeight(1.0);
+        g.ellipse(endX, endY, ns, ns);
+
         if (pu > 0.1 || amp > 0.3) {
-          ellipse(endX, endY, ns * 1.5, ns * 1.5);
+          g.ellipse(endX, endY, ns * 1.5, ns * 1.5);
         }
       }
 
-      colorMode(RGB, 255);
+      g.colorMode(RGB, 255);
     }
   }
 }

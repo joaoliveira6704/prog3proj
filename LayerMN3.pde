@@ -16,51 +16,52 @@ class LayerMN3 extends Layer {
     shakeIntensity *= shakeDecay;
   }
 
-  void draw() {
+  void drawLayer(PGraphics g) {
+    g.clear();
     if (shakeIntensity < 0.5) return;
 
     float s = shakeIntensity;
     int   segments = 32;   // how many segments per edge
 
-    stroke(255, 255, 255, min(shakeIntensity * 8, 220));
-    strokeWeight(2.5);
-    noFill();
+    g.stroke(255, 255, 255, min(shakeIntensity * 8, 220));
+    g.strokeWeight(2.5);
+    g.noFill();
 
     // Top edge
-    beginShape();
+    g.beginShape();
     for (int i = 0; i <= segments; i++) {
       float x = map(i, 0, segments, 0, width);
       float y = random(-s, s);
-      vertex(x, y);
+      g.vertex(x, y);
     }
-    endShape();
+    g.endShape();
 
     // Bottom edge
-    beginShape();
+    g.beginShape();
     for (int i = 0; i <= segments; i++) {
       float x = map(i, 0, segments, 0, width);
       float y = height + random(-s, s);
-      vertex(x, y);
+      g.vertex(x, y);
     }
-    endShape();
+    g.endShape();
 
     // Left edge
-    beginShape();
+    g.beginShape();
     for (int i = 0; i <= segments; i++) {
       float x = random(-s, s);
       float y = map(i, 0, segments, 0, height);
-      vertex(x, y);
+      g.vertex(x, y);
     }
-    endShape();
+    g.endShape();
 
     // Right edge
-    beginShape();
+    g.beginShape();
     for (int i = 0; i <= segments; i++) {
       float x = width + random(-s, s);
       float y = map(i, 0, segments, 0, height);
-      vertex(x, y);
+      g.vertex(x, y);
     }
-    endShape();
+    g.endShape();
   }
 
   void keyPressed(char k) {

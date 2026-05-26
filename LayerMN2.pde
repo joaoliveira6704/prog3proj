@@ -73,14 +73,15 @@ class LayerMN2 extends Layer {
     }
   }
 
-  void draw() {
+  void drawLayer(PGraphics g) {
+    g.clear();
     // Draw rings first (behind particles)
-    noFill();
-    for (PulseRing r : rings) r.draw();
+    g.noFill();
+    for (PulseRing r : rings) r.draw(g);
 
     // Draw particles
-    noStroke();
-    for (SandParticle p : particles) p.draw();
+    g.noStroke();
+    for (SandParticle p : particles) p.draw(g);
   }
 
   void keyPressed(char k) {
@@ -146,7 +147,7 @@ class LayerMN2 extends Layer {
           || y < -60 || y > height + 60;
     }
 
-    void draw() {
+    void draw(PGraphics g) {
       float lifeFrac = life / maxLife;
       // Fade in at birth, fade out at death
       float envelope = lifeFrac < 0.12
@@ -157,8 +158,8 @@ class LayerMN2 extends Layer {
       float alpha  = glow * 200;
       float drawSz = sz * (1.0 + pulseGlow * 1.6); // particles swell briefly
 
-      fill(255, 255, 255, alpha);
-      ellipse(x, y, drawSz, drawSz);
+      g.fill(255, 255, 255, alpha);
+      g.ellipse(x, y, drawSz, drawSz);
     }
   }
 
@@ -186,14 +187,14 @@ class LayerMN2 extends Layer {
 
     boolean isDead() { return alpha < 2; }
 
-    void draw() {
-      stroke(255, 255, 255, alpha);
-      strokeWeight(0.8);
-      ellipse(ox, oy, radius * 2, radius * 2);
+    void draw(PGraphics g) {
+      g.stroke(255, 255, 255, alpha);
+      g.strokeWeight(0.8);
+      g.ellipse(ox, oy, radius * 2, radius * 2);
       // second inner ring, slightly behind
       if (radius > 30) {
-        stroke(255, 255, 255, alpha * 0.4);
-        ellipse(ox, oy, (radius - 25) * 2, (radius - 25) * 2);
+        g.stroke(255, 255, 255, alpha * 0.4);
+        g.ellipse(ox, oy, (radius - 25) * 2, (radius - 25) * 2);
       }
     }
   }

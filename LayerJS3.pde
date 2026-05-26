@@ -109,17 +109,18 @@ class LayerJS3 extends Layer {
     if (k == 'c' || k == 'C') spawnMeteor();
   }
 
-  void draw() {
-    pushStyle();
+  void drawLayer(PGraphics g) {
+    g.clear();
+    g.pushStyle();
 
     // debris first — sits behind meteor head
-    noStroke();
+    g.noStroke();
     for (int i = 0; i < DEBRIS; i++) {
       if (dLife[i] <= 0) continue;
       float a = dLife[i];
-      fill(255, 200 + a * 40, 140, a * 220);
+      g.fill(255, 200 + a * 40, 140, a * 220);
       float sz = 1 + a * 2.2;
-      ellipse(dX[i], dY[i], sz, sz);
+      g.ellipse(dX[i], dY[i], sz, sz);
     }
 
     // meteors
@@ -134,25 +135,25 @@ class LayerJS3 extends Layer {
         float f = 1 - j / (float)TRAIL;
         // hot core → warm tail
         float r = 255;
-        float g = 180 + f * 70;
+        float gr = 180 + f * 70;
         float b = 80 + f * 100;
-        stroke(r, g, b, 230 * f);
-        strokeWeight(mSize[i] * f * 1.1);
-        line(mTX[i][idxA], mTY[i][idxA], mTX[i][idxB], mTY[i][idxB]);
+        g.stroke(r, gr, b, 230 * f);
+        g.strokeWeight(mSize[i] * f * 1.1);
+        g.line(mTX[i][idxA], mTY[i][idxA], mTX[i][idxB], mTY[i][idxB]);
       }
 
       // glowing head — layered halo then bright core
-      noStroke();
-      for (int g = 4; g >= 0; g--) {
-        float a = 50 + (4 - g) * 40;
-        float rr = mSize[i] * (1 + g * 0.9);
-        fill(255, 210 - g * 12, 150 - g * 22, a);
-        ellipse(mX[i], mY[i], rr, rr);
+      g.noStroke();
+      for (int gr = 4; gr >= 0; gr--) {
+        float a = 50 + (4 - gr) * 40;
+        float rr = mSize[i] * (1 + gr * 0.9);
+        g.fill(255, 210 - gr * 12, 150 - gr * 22, a);
+        g.ellipse(mX[i], mY[i], rr, rr);
       }
-      fill(255);
-      ellipse(mX[i], mY[i], mSize[i] * 0.7, mSize[i] * 0.7);
+      g.fill(255);
+      g.ellipse(mX[i], mY[i], mSize[i] * 0.7, mSize[i] * 0.7);
     }
 
-    popStyle();
+    g.popStyle();
   }
 }
