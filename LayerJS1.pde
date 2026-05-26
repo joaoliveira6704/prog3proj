@@ -3,6 +3,7 @@
 
 class LayerJS1 extends Layer {
   float bassP, midP, trebP, beatP, swirl, shockR, shockA;
+  float pull;
 
   static final int STARS = 220;
   float[] starA = new float[STARS];
@@ -40,8 +41,18 @@ class LayerJS1 extends Layer {
       shockR = 0;
       shockA = 1;
     }
-    shockR += 6 + beatStrength * 8;
+    shockR += 6 + beatStrength * 8 + pull * 14;
     shockA *= 0.94;
+    pull *= 0.92;
+  }
+
+  void keyPressed(char k) {
+    if (k == 'z' || k == 'Z') {
+      pull = 1.0;
+      shockR = 0;
+      shockA = 1.0;
+      swirl += 0.8;
+    }
   }
 
   void draw() {
@@ -56,13 +67,13 @@ class LayerJS1 extends Layer {
     // starfield warp toward center
     noStroke();
     for (int i = 0; i < STARS; i++) {
-      float a = starA[i] + swirl * 0.15 * starS[i];
-      float rr = starR[i] * min(width, height) * 0.5;
+      float a = starA[i] + swirl * (0.15 + pull * 1.2) * starS[i];
+      float rr = starR[i] * min(width, height) * 0.5 * (1 + pull * 0.6);
       float x = cx + cos(a) * rr;
       float y = cy + sin(a) * rr;
-      float br = 180 * starS[i] + trebP * 70;
+      float br = 180 * starS[i] + trebP * 70 + pull * 80;
       fill(br);
-      float sz = 1 + starS[i] * (1 + trebP * 2);
+      float sz = 1 + starS[i] * (1 + trebP * 2) + pull * 1.5;
       ellipse(x, y, sz, sz);
     }
 
@@ -94,8 +105,9 @@ class LayerJS1 extends Layer {
     for (int i = 0; i < 4; i++) {
       float a = 255 - i * 50;
       stroke(a);
-      strokeWeight(1.5 + i * 0.6 + trebP * 2);
-      ellipse(cx, cy, photonR * 2 + i, photonR * 2 + i);
+      strokeWeight(1.5 + i * 0.6 + trebP * 2 + pull * 3);
+      float bulge = pull * horizonR * 0.6;
+      ellipse(cx, cy, photonR * 2 + i + bulge, photonR * 2 + i + bulge);
     }
 
     // shockwave on beat
@@ -108,8 +120,9 @@ class LayerJS1 extends Layer {
 
     // event horizon — pure black disk with soft white rim
     noStroke();
-    fill(255, 90 + beatP * 120);
-    ellipse(cx, cy, horizonR * 2 + 6, horizonR * 2 + 6);
+    fill(255, 90 + beatP * 120 + pull * 140);
+    float rim = horizonR * 2 + 6 + pull * horizonR * 0.8;
+    ellipse(cx, cy, rim, rim);
     fill(0);
     ellipse(cx, cy, horizonR * 2, horizonR * 2);
 
