@@ -1,4 +1,4 @@
-// SHINE ON YOU CRAZY DIAMOND — 9 Layer Visualizer
+//  Planet Caravan — 9 Layer Visualizer
 // Processing 4 | Grupo: João Oliveira, Miguel Neto, João Santos
 // Teclas: 1-9 = toggle JO1-3/MN1-3/JS1-3 | SPACE = flash | A = trigger key action (active layers)
 
